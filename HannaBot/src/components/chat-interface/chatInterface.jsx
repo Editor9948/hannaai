@@ -8,7 +8,7 @@ import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
-import { ArrowLeft, Send,  User, Loader2, Trash2,ListChecks, Download  } from "lucide-react"
+import { ArrowLeft, Send,  User, Loader2, Trash2,ListChecks, Download, RefreshCw  } from "lucide-react"
 
 const RAW_API_URL = process.env.RAW_API_URL
 const API_BASE = RAW_API_URL ? RAW_API_URL.replace(/\/$/, "") : ""
@@ -43,6 +43,7 @@ export function ChatInterface({ onBack }) {
   })
   const [localInput, setLocalInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [regenLoading, setRegenLoading] = useState(false)
 
    const [level, setLevel] = useState("Beginner")
   
@@ -87,6 +88,56 @@ export function ChatInterface({ onBack }) {
     a.download = `hannabot-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.md`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const regenerateLast = async () => {
+    if (isLoading || regenLoading) return
+    // Find last user message before the last assistant message
+    const lastAssistantIndex = [...messages].reverse().findIndex((m) => m.role === "assistant")
+    if (lastAssistantIndex === -1) return
+    const idxFromStart = messages.length - 1 - lastAssistantIndex
+    // Find the nearest preceding user message
+    let lastUserIdx = -1
+    for (let i = idxFromStart - 1; i >= 0; i--) {
+      if (messages[i].role === "user") { lastUserIdx = i; break; }
+    }
+    if (lastUserIdx === -1) return
+
+    setRegenLoading(true)
+    const assistantId = messages[idxFromStart]?.id || String(Date.now() + "-assistant-regen")
+    // Replace/clear last assistant message content before refetch
+    setMessages((prev) => prev.map((m, i) => (i === idxFromStart ? { ...m, content: "" } : m)))
+    try {
+      const res = await fetch(CHAT_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: level,
+          messages: messages
+            .slice(0, lastUserIdx + 1) // up to and including last user message
+            .map((m) => ({ role: m.role, content: toText(m.content) })),
+        }),
+      })
+      const ct = res.headers.get("content-type") || ""
+      if (!res.ok) {
+        const body = await res.text().catch(() => "")
+        const msg = body || `Request failed (${res.status})`
+        upsertAssistantMessage(assistantId, msg)
+        return
+      }
+      if (ct.includes("application/json")) {
+        const data = await res.json()
+        const content = toText(data.content) || toText(data.reply) || toText(data.message?.content) || ""
+        upsertAssistantMessage(assistantId, content)
+      } else {
+        const textBody = await res.text()
+        upsertAssistantMessage(assistantId, textBody || "")
+      }
+    } catch (e) {
+      upsertAssistantMessage(assistantId, "Regeneration failed. Please try again.")
+    } finally {
+      setRegenLoading(false)
+    }
   }
 
   const upsertAssistantMessage = (id, content) => {
@@ -304,7 +355,7 @@ export function ChatInterface({ onBack }) {
                 >
                   {/* Render markdown for assistant; keep user as plain text if you prefer */}
                   {message.role === "assistant" ? (
-                      <div className="text-sm leading-relaxed">
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -351,10 +402,6 @@ export function ChatInterface({ onBack }) {
                         },
                         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                         em: ({ children }) => <em className="italic">{children}</em>,
-                        ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
-                        h3: ({ children }) => <h3 className="font-semibold text-base mb-1 mt-2">{children}</h3>,
-                        p: ({ children }) => <p className="mb-2">{children}</p>,
                       }}
                     >
                       {toText(message.content)}
@@ -364,6 +411,22 @@ export function ChatInterface({ onBack }) {
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                       {toText(message.content)}
                     </p>
+                  )}
+                  {/* Regenerate button for the last assistant message */}
+                  {message.role === "assistant" && messages[messages.length - 1]?.id === message.id && (
+                    <div className="mt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={isLoading || regenLoading}
+                        onClick={regenerateLast}
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                        {regenLoading ? "Regenerating..." : "Regenerate"}
+                      </Button>
+                    </div>
                   )}
                   {message.createdAt && (
                     <p
