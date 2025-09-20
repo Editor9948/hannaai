@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "packageManager": "npm@10.9.3",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js"
