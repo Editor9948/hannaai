@@ -7,7 +7,9 @@
   "packageManager": "npm@10.9.3",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "build": "echo 'No build step required'",
+    "deploy": "node src/server.js"
   },
   "engines": {
     "node": ">=18"
