@@ -10,9 +10,11 @@ import { Card } from "../ui/card"
 import { ScrollArea } from "../ui/scroll-area"
 import { ArrowLeft, Send,  User, Loader2, Trash2,ListChecks, Download, RefreshCw  } from "lucide-react"
 
-const RAW_API_URL = process.env.RAW_API_URL
-const API_BASE = RAW_API_URL ? RAW_API_URL.replace(/\/$/, "") : ""
-const CHAT_ENDPOINT = API_BASE ? `${API_BASE}/api/chat` : "http://localhost:4000/api/chat"
+// Prefer CRA-style env var for production, with a runtime fallback to current origin
+const API_BASE = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "")
+const CHAT_ENDPOINT = API_BASE
+  ? `${API_BASE}/api/chat`
+  : (typeof window !== "undefined" ? `${window.location.origin}/api/chat` : "http://localhost:4000/api/chat")
 
 
 const STORAGE_KEY = "chatbot-messages"
