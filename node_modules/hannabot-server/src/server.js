@@ -13,11 +13,21 @@ const allowList = allowOriginEnv
   ? allowOriginEnv.split(",").map((s) => s.trim()).filter(Boolean)
   : []
 
+// Add common Vercel domains to allowlist if not already present
+const vercelDomains = [
+  "https://hannaai.vercel.app",
+  "https://hannaai-git-main.vercel.app", 
+  "https://hannaai-git-develop.vercel.app"
+]
+
+const allAllowedOrigins = [...new Set([...allowList, ...vercelDomains])]
+
 const corsOptions = {
-  origin: allowList.length
-    ? allowList
+  origin: allAllowedOrigins.length
+    ? allAllowedOrigins
     : (origin, callback) => {
         // If no allowlist provided, reflect any origin (avoids "*" when credentials are true)
+        console.log("CORS request from origin:", origin)
         callback(null, true)
       },
   credentials: true,

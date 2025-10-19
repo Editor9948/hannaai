@@ -25,6 +25,10 @@ const API_BASE =  process.env.REACT_APP_API_URL
   ? RAW.replace(/\/$/, "")
   : (isBrowser ? "" : "http://localhost:4000")
 
+// Debug logging to help troubleshoot
+console.log("API_BASE:", API_BASE)
+console.log("REACT_APP_API_URL:", process.env.REACT_APP_API_URL)
+
 async function post(path, body) {
   let res
   try {
