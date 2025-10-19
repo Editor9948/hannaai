@@ -13,6 +13,8 @@
     "install:all": "npm --prefix HannaAI install && npm --prefix HannaAiServer install",
     "build:client": "npm --prefix HannaAI run build",
     "build": "npm run build:client",
-    "start": "node HannaAiServer/src/server.js"
+    "start": "node HannaAiServer/src/server.js",
+    "prepare-deploy": "node ./scripts/prepareDeploy.js",
+    "deploy": "npm run prepare-deploy && npm run start"
   }
 }

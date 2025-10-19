@@ -1,4 +1,7 @@
 // Prefer relative path in-browser so CRA proxy (package.json: proxy) handles dev
+/* eslint-env browser */
+// Note: If your editor still flags `fetch` as undefined, either add the DOM lib
+// to your editor/tsconfig, or install a polyfill (cross-fetch) for SSR.
 const RAW = (process.env.REACT_APP_API_URL || "").trim()
 const isBrowser = typeof window !== "undefined"
 // If an explicit env URL is provided, use it; otherwise use relative when in browser, or localhost for non-browser
