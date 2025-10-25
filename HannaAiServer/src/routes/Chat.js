@@ -1,6 +1,9 @@
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
 
+// Assistant identity (can be overridden via environment variable)
+const ASSISTANT_NAME = process.env.ASSISTANT_NAME || "HannaAI"
+
 export async function chatHandler(req, res) {
   try {
     const { messages = [], mode = "Beginner", kind, code = "", language = "plaintext", preferences = {} } = req.body || {}
@@ -18,6 +21,8 @@ export async function chatHandler(req, res) {
     }
 
     // Level / explanation style system prompt
+    // We'll include the assistant identity in the system prompt so the model
+    // consistently refers to itself as the configured assistant name.
     const levelPrompt =
       mode === "Advanced"
         ? "Be concise and rigorous. Focus on nuances, performance and edge cases."
@@ -35,8 +40,9 @@ export async function chatHandler(req, res) {
           .filter(m => m.content.trim() !== "")
       : []
 
-    // Base conversation (system + history)
-    let modelMessages = [{ role: "system", content: levelPrompt }, ...cleanMessages]
+  // Base conversation (system + history) — include assistant identity
+  const systemIntro = `${ASSISTANT_NAME}: You are ${ASSISTANT_NAME}, a helpful AI assistant (HannaCode). ${levelPrompt} Always end your response with a signature on its own line exactly like this: "— ${ASSISTANT_NAME}". Do not add any extra text after the signature.`
+  let modelMessages = [{ role: "system", content: systemIntro }, ...cleanMessages]
 
     // Quiz mode – append quiz instruction
     if (kind === "quiz") {
@@ -72,7 +78,7 @@ export async function chatHandler(req, res) {
       modelMessages = [
         {
           role: "system",
-            content: `You are an expert software assistant.
+            content: `You are ${ASSISTANT_NAME}, an expert software assistant.
 ${persona}
 Return STRICT JSON only, matching this schema:
 {
