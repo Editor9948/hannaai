@@ -39,7 +39,7 @@ export function ChatInterface({ onBack }) {
       normalizeMessage({
         id: "1",
         role: "assistant",
-        content: "Hello! I'm your AI assistant. How can I help you today?",
+        content: "Hello! I'm your HannaAI assistant. How can I help you today?",
       }),
     ]
   })
@@ -67,7 +67,7 @@ export function ChatInterface({ onBack }) {
       normalizeMessage({
         id: "1",
         role: "assistant",
-        content: "Hello! I'm your AI assistant. How can I help you today?",
+        content: "Hello! I'm your HannaAI assistant. How can I help you today?",
       }),
     ]
     setMessages(base)
